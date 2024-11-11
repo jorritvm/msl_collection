@@ -13,7 +13,7 @@
 - put the ampstyles.jay file in the `%appdata%\mirc` folder
  
 # screenshot
-[<img src="screenshot.png" width="300"/>](doc/screenshot.png)
+[<img src="screenshot.png" width="300"/>](screenshot.png)
 
 
 # version
