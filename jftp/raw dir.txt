@@ -1,0 +1,29 @@
+drwxr-xr-x   5 372994   50000         512 Jun 14 15:00 CARD READER
+drwxr-xr-x   2 372994   50000         512 Sep 24 11:09 Detail_Bed
+drwxr-xr-x   2 372994   110           512 Sep 24 16:20 Leuke Teksten
+drwxr-xr-x   2 372994   50000         512 Aug 18 11:42 Warez
+-rw-r--r--   1 372994   50000      209920 Oct  8 17:36 esthetica.doc
+drwxr-xr-x   2 372994   50000         512 Oct 18 11:24 jochen
+drwxr-xr-x   2 372994   50000         512 Jun 26 11:57 klasfotos
+drwxr-xr-x   5 372994   50000         512 Sep 24 16:20 mIRC
+drwxr-xr-x   2 372994   50000         512 Sep 24 16:21 music
+drwxr-xr-x   2 372994   50000         512 Oct 18 11:24 progs
+
+
+
+
+drwxr-xr-x   2 372994   50000         512 Sep 24 16:21 .
+drwxr-xr-x  11 372994   110          1536 Oct 25 17:52 ..
+-rw-r--r--   1 372994   50000     6661418 Jul 15 07:35 12-simple_plan-perfect-apc.mp3
+-rw-r--r--   1 372994   50000     3986204 Aug  3 09:15 Anouk - Michel.mp3
+-rw-r--r--   1 372994   50000     4941824 Aug  3 08:57 Echo & The Bunnymen - Ocean Rain.mp3
+
+
+1/attrib
+3/owner
+4/group
+5/size
+6/date month
+7/date day
+8/date hour-year
+9-/filename

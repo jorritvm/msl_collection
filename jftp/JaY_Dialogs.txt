@@ -1,0 +1,160 @@
+;DIALOGS SECTION
+dialog jfsm {
+
+  size -1 -1 300 370
+  title "JaYFTP Site Manager"
+
+  tab "General", 1, 115 20 170 342
+  tab "Stats", 2  
+
+  box "Sites", 3, 5 5 100 315 
+  box "Site Info", 4, 110 5 185 360
+  box "Anti-Idle", 5, 125 270 150 50, tab 1
+  box "FTP Stats", 6, 125 45 150 102, tab 2
+  box "FXP Stats", 7, 125 185 150 102, tab 2
+
+  edit "", 101, 180 48 100 20, tab 1
+  edit "", 102, 180 78 100 20, tab 1
+  edit "", 103, 180 108 100 20, tab 1
+  edit "", 104, 180 138 100 20, tab 1
+  edit "", 105, 180 168 100 20, tab 1
+  edit "", 106, 180 198 100 20,autohs tab 1
+  edit "", 109, 180 228 100 20, autohs tab 1
+
+
+  button "Add Site", 200, 15 325 70 20
+  button "Del Site", 201, 15 345 70 20
+  button "SAVE !", 203, 130 330 70 25, tab 1
+  button "QUIT", 204, 200 330 70 25, tab 1
+  button "RESET", 205, 125 150 50 25, tab 2
+  button "RESET", 206, 125 290 50 25, tab 2
+
+  text "Site Name:", 301, 120 50 60 15, tab 1
+  text "IP:", 302, 120 80 60 15, tab 1 
+  text "PORT:", 303, 120 110 60 15, tab 1
+  text "LOGIN:", 304, 120 140 60 15, tab 1
+  text "PASS:", 305, 120 170 60 15, tab 1
+  text "NOTES:", 306, 120 200 60 15, tab 1
+  text "PATH:", 309, 120 230 60 15, tab 1
+
+  check "Activate?", 500, 135 290 100 15, tab 1
+
+  list 800, 10 20 90 305
+  list 801, 130 60 140 87, tab 2
+  list 802, 130 200 140 87, tab 2 
+}
+dialog jfcon {
+  title "Connect"
+  size -1 -1 200 110
+  text "Connect:", 1, 5 10 40 20
+  combo 2, 50 7 100 22, drop autohs
+  text "________________________________", 3, 5 32 190 20
+  button "QUICK CONNECT", 4, 25 55 150 25
+  button "Exit", 5, 168 88 30 20, ok
+  button "GO", 6, 150 7 40 22, ok
+}
+
+;REMOTE SECTION
+on *:dialog:jfsm:*:*:{
+  if (($devent == init)) {
+    if (($scriptdirsites.ini)) {
+      unset %jfsites      
+      var %i = 0
+      while ((%i != $ini($scriptdirsites.ini,0))) {
+        inc %i        
+        var %jfsites = $+(%jfsites,$ini($scriptdirsites.ini,%i),$chr(46))
+      }
+      didtok $dname 800 46 %jfsites    
+    }
+    did -a $dname 801 Total FTP Data Transferred: 
+    did -a $dname 801 Download: 
+    did -a $dname 801 
+    did -a $dname 801 Upload:
+    did -a $dname 802 Total FXP Data Transferred: 
+    did -a $dname 802 Download: 
+    did -a $dname 802 
+    did -a $dname 802 Upload:
+  }
+  if (($devent == sclick)) {
+    if (($did == 800)) { 
+      did -ar $dname 101 $did(800).seltext
+      did -ar $dname 102 $readini($scriptdirsites.ini,$did(800).seltext,ip)
+      did -ar $dname 103 $readini($scriptdirsites.ini,$did(800).seltext,port)
+      did -ar $dname 104 $readini($scriptdirsites.ini,$did(800).seltext,user)
+      did -ar $dname 105 $readini($scriptdirsites.ini,$did(800).seltext,pass)
+      did -ar $dname 106 $readini($scriptdirsites.ini,$did(800).seltext,notes)
+      did -ar $dname 109 $readini($scriptdirsites.ini,$did(800).seltext,path)
+      if (($readini($scriptdirsites.ini,$did(800).seltext,antiidle) == 1)) { did -c $dname 500 }
+      else { did -u $dname 500 }
+      if (($readini($scriptdirsites.ini,$did(800).seltext,ftptotul))) did -o $dname 801 5 $ifmatch 
+      else did -o $dname 801 5
+      if (($readini($scriptdirsites.ini,$did(800).seltext,ftptotdl))) did -o $dname 801 3 $ifmatch 
+      else did -o $dname 801 3
+      if (($readini($scriptdirsites.ini,$did(800).seltext,fxptotdl))) did -o $dname 802 3 $ifmatch 
+      else did -o $dname 802 3
+      if (($readini($scriptdirsites.ini,$did(800).seltext,fxptotul))) did -o $dname 802 5 $ifmatch 
+      else did -o $dname 802 5
+    }
+    if (($did == 205) && ($did(800).seltext)) { writeini $scriptdirsites.ini $did(800).seltext ftptotul 0 | writeini $scriptdirsites.ini $did(800).seltext ftptotdl 0 | dialog -x jfsm jfsm | dialog -dmv jfsm jfsm }
+    if (($did == 206) && ($did(800).seltext)) { writeini $scriptdirsites.ini $did(800).seltext fxptotul 0 | writeini $scriptdirsites.ini $did(800).seltext fxptotdl 0 | dialog -x jfsm jfsm | dialog -dmv jfsm jfsm }
+    if (($did == 203)) {
+      writeini $scriptdirsites.ini $did(101) ip $did(102)
+      writeini $scriptdirsites.ini $did(101) port $did(103)
+      writeini $scriptdirsites.ini $did(101) user $did(104)
+      writeini $scriptdirsites.ini $did(101) pass $did(105)
+      writeini $scriptdirsites.ini $did(101) notes $did(106)
+      writeini $scriptdirsites.ini $did(101) path $did(109)
+      if (($did(500).state == 1)) { 
+        writeini $scriptdirsites.ini $did(101) antiidle 1
+      }
+      else { writeini $scriptdirsites.ini $did(101) antiidle 0 }
+      dialog -x jfsm jfsm | dialog -dmv jfsm jfsm
+    }
+    if (($did == 204)) dialog -x jfsm jfsm
+    if (($did == 201)) { remini $scriptdirsites.ini $did(101) | dialog -x jfsm jfsm | dialog -dmv jfsm jfsm }
+    if (($did == 200)) { 
+      var %a = $?="Enter Site Name (No Space)"
+      var %z = $?="Enter Site IP/Adress"
+      var %e = $?="Enter Site Port"
+      var %r = $?="Enter User Name"
+      var %t = $?="Enter Password"
+      var %y = $?="Enter Personal Notes"
+      var %p = $?="Enter remote path"      
+      var %u = $?!="Activate Anti-Idle?"
+      if ((%a) && (%z) && (%e) && (%r) && (%t) && (%y) && (%u != $null)) {
+        writeini $scriptdirsites.ini %a ip %z
+        writeini $scriptdirsites.ini %a port %e
+        writeini $scriptdirsites.ini %a user %r
+        writeini $scriptdirsites.ini %a pass %t
+        writeini $scriptdirsites.ini %a notes %y
+        writeini $scriptdirsites.ini %a path %p
+        writeini $scriptdirsites.ini %a antiidle $iif(%u == $true,1,0)
+      }
+      dialog -x jfsm jfsm | dialog -dmv jfsm jfsm
+    }
+  }
+}
+on *:dialog:jfcon:*:*:{
+  if (($devent == init)) {
+    if (($scriptdirsites.ini)) {
+      unset %jfsites      
+      var %i = 0
+      while ((%i != $ini($scriptdirsites.ini,0))) {
+        inc %i
+        var %jfsites = $+(%jfsites,$ini($scriptdirsites.ini,%i),$chr(46))
+      }
+      didtok $dname 2 46 %jfsites    
+    }
+  }
+  if (($devent == sclick)) {
+    if (($did == 4)) { dialog -x jfcon jfcon | jfcon }
+    if (($did == 6)) {  
+      set %site.name $did(2).seltext
+      set %site.ip $readini($scriptdirsites.ini,$did(2).seltext,ip)
+      set %site.port $readini($scriptdirsites.ini,$did(2).seltext,port)
+      set %site.user $readini($scriptdirsites.ini,$did(2).seltext,user)
+      set %site.pass $readini($scriptdirsites.ini,$did(2).seltext,pass)
+      sockopen %site.name %site.ip %site.port
+    }
+  }
+}

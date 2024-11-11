@@ -1,0 +1,334 @@
+;DIALOG SECTION OF THE SCRIPT
+dialog jftp {
+
+  size -1 -1 650 400
+  title JaYFTP
+
+  box "Home", 1, 5 5 200 390
+  box "Actions", 2, 210 5 150 390
+  box "Server", 3, 370 5 270 390
+  box "Queue List", 4, 210 403 430 114
+  box "Queue Actions", 5, 5 403 200 114
+
+  edit "", 100, 410 50 220 20, edit autohs
+  edit "", 102, 10 240 185 155, autohs autovs vsbar multi hsbar
+  edit "", 103, 410 75 220 20, return autohs
+
+  button "Open Queue", 200, 220 20 130 25
+  button "Close Queue", 201, 220 50 130 25 
+  button "--Upload File-->", 202, 220 100 130 25
+  button "<--Download File--", 203, 220 130 130 25 
+  button "Rename File/Dir", 204, 220 235 130 25
+  button "Make Dir", 205, 220 200 130 25
+  button "Delete Dir", 206, 220 170 130 25
+  button "Refresh Files", 207, 220 300 130 25
+  button "Exit", 208, 220 360 130 25, ok
+  button "Connect", 209, 380 20 125 25
+  button "Disconnect", 210, 500 20 125 25
+  button "Open DL Folder", 214, 15 70 100 25
+  button "Set DL Folder", 215, 15 100 100 25
+  button "Open UL Folder", 216, 15 180 100 25
+  button "Set UL Folder", 217, 15 210 100 25
+  button "", 218, 0 0 0 0, default
+  button "", 219, 0 0 0 0, default
+  button "", 220, 152 225 15 15 
+  button "Add To Q:DL", 224, 10 418 95 24
+  button "Add To Q:UL:File", 227, 10 442 95 24
+  button "Add To Q:UL:Dir", 228, 10 466 95 24
+  button "Del From Queue", 222, 10 491 95 24
+  button "Start Actions", 225, 105 418 95 24
+  button "Stop Actions", 226, 105 442 95 24
+  button "Move To Top", 221, 105 466 95 24
+  button "Reset Queue", 223, 105 491 95 24
+  button "Delete File", 229, 220 270 130 25
+
+
+  text "Download Folder:", 300, 15 30 200 15
+  text "", 301, 15 50 185 15, autohs
+  text "DIR:", 302, 380 77 30 15
+  text "Upload Folder", 303, 15 140 150 15
+  text "", 304, 15 160 185 15, autohs
+  text "RAW:", 305, 380 52 30 15
+  text "Clear", 306, 168 226 50 15
+
+  combo
+
+  check
+
+  menu "General", 600
+  item "Reset All", 601
+  item "Quit", 602
+
+  menu "Options", 610
+  item "Preferences",611
+  item "Site Manager",612
+  item "Skip List",613
+  item "Ident",614
+
+  menu "Switch To JaYFXP", 620
+
+  list 700, 380 102 250 293, extsel size autohs autovs vsbar multi
+  list 701, 220 420 410 95, extsel size autohs autovs vsbar multi
+}
+;LOAD SECTION OF THE SCRIPT
+on *:load:{ 
+  if ((!$script($scriptdirJaY_Dialogs.txt))) load -rs $scriptdirJaY_Dialogs.txt 
+  echo 4 -n JaYFTP v1.0a Loaded
+  echo 4 -n Tough my script meight look l33t 2 you, it's still in an alpha phase.
+  echo 4 -n This means that some features are still unavailable, while other meight work properly.
+  echo 12 -n List Of Working Features:
+  echo 4 -n Uploading, Downloading, One file at a time.
+  echo 4 -n Entering Raw commands as wel as quick dir locations.
+  echo 4 -n All buttons in the main action screen also work.(in exeption for 'delete dir')
+  echo 4 -n Full use of sites manager.
+  echo 12 -n List Of Features That'll be added later.
+  echo 4 -n Use Of Queue Section.
+  echo 4 -n Deleting Non-Empty Dirs.
+  echo 4 -n Skiplist, ident, mput.
+}
+;POPUP SECTION OF THE SCRIPT
+menu status,channel,query,menubar {
+  -
+  JaYFTP:dialog -dmv jftp jftp
+  JaYFXP:dialog -dmv jfxp jfxp
+  -
+}
+
+;ALIAS SECTION OF THE SCRIPT
+alias jfcon { 
+  set %site.name $+(site-,$?="enter site name")
+  set %site.ip $?="enter site ip/adress"
+  set %site.port $?="enter site port"
+  set %site.user $?="enter user name"
+  set %site.pass $?*="enter password"
+  set %site.con $?!="connect now?"
+  if ((%site.con == $true)) { 
+    sockopen %site.name %site.ip %site.port
+  }
+}
+alias jfdl { set %jfcmd dl | jfstatus TYPE I | sockwrite -n %site.name TYPE I | jfstatus PASV | sockwrite -n %site.name PASV }
+alias jful { set %jfcmd ul | jfstatus TYPE I | sockwrite -n %site.name TYPE I | jfstatus PASV | sockwrite -n %site.name PASV } 
+alias jflist { write -c $scriptdirjflisting.txt | set %jfcmd list | jfstatus TYPE A | sockwrite -n %site.name TYPE A | jfstatus PASV | sockwrite -n %site.name PASV }
+alias jfbinsite { sockopen $+(bin_,%site.name) %bin.ip %bin.port }
+alias jfstatus { did -a jftp 102 $1- $crlf }
+alias jflistsplit {
+  var %raw = $scriptdirjflisting.txt, %i = 3, %tmpdirs = $scriptdirjfdirstmp.txt, %tmpfiles = $scriptdirjffilestmp.txt
+  write -c %tmpdirs
+  write -c %tmpfiles
+  filter -ff %raw %tmpdirs d*
+  filter -ff %raw %tmpfiles -*
+  did -r jftp 700
+  did -a jftp 700 <::Parent Directory::>
+  did -a jftp 700 ..::DIRS::..
+  while ((%i != $calc($lines(%tmpdirs) + 1))) {
+    did -a jftp 700 $+($chr(43),$gettok($read(%tmpdirs,%i),9-,32))
+    inc %i
+  }
+  did -a jftp 700 ..::FILES::..
+  var %i = 1
+  while ((%i != $calc($lines(%tmpfiles) + 1))) {
+    did -a jftp 700 $+($chr(45),$gettok($read(%tmpfiles,%i),9-,32))
+    inc %i
+  }
+}
+alias jfaddqueuedl {
+  var %i = 0
+  while ((%i != $did(jftp,700,0).sel)) {
+    inc %i
+    did -a jftp 701 $+($left($did(jftp,700,$did(jftp,700,%i).sel).text,1),$did(jftp,103),$right($did(jftp,700,$did(jftp,700,%i).sel).text,-1),|DL)
+  }
+}
+alias jfaddqueueulfile {
+  var %i = $sfile(%ul.loc,Choose File To Upload,Got it!)
+  did -a jftp 701 $+(-,%i,|UL|,$did(jftp,103))
+}
+alias jfaddqueueuldir {
+  var %i = $sdir(%ul.loc,Choose Dir To Upload)
+  did -a jftp 701 $+(+,%i,|UL|,$did(jftp,103))
+}
+alias jfdelqueue {
+  var %i = 0
+  var %p = 0
+  var %o = $did(jftp,701,0).sel
+  while ((%i != %o)) {
+    inc %i
+    did -d jftp 701 $did(jftp,701,$calc(%i - %p)).sel
+    inc %p
+  }
+}
+alias jfqueuestart {
+  set %jfqueue GO
+  if (($gettok($did(jftp,701,1),2,124) == DELDIR)) jfqueuedeldir
+  ;  if (($gettok($did(jftp,701,1),2,124) == UL)) 
+  ;  if (($gettok($did(jftp,701,1),2,124) == DL)) 
+}
+alias jfqueuedeldir {
+  var %dir = $right($gettok($did(jftp,701,1),1,124),-1)
+  jfstatus CWD %dir
+  sockwrite -n %site.name CWD %dir
+  var %i = $did(jftp,700).lines
+  while ((%i > 3)) {
+    if (($left($did(jftp,700,%i),1) == -)) { 
+      did -i jftp 701 1 $+(-,$did(103),$right($did(700).seltext,-1),|DELE|)
+      dec %i
+    }
+    if (($left($did(jftp,700,%i),1) == .)) { 
+      dec %i
+    }
+    if (($left($did(jftp,700,%i),1) == +)) { 
+      did -i jftp 701 1 $+(+,$did(103),$right($did(700).seltext,-1),|DELDIR|)
+    }
+  }
+}
+;REMOTE SECTION OF THE SCRIPT
+on *:dialog:jftp:*:*:{
+  if (($devent == init)) {
+    did -a $dname 301 %dl.loc 
+    did -a $dname 304 %ul.loc
+  }
+  if (($devent == sclick)) {
+    if (($did == 200)) { dialog -s jftp -1 -1 -1 540 }
+    if (($did == 201)) { dialog -s jftp -1 -1 -1 420 }
+    if (($did == 202)) { set %ul.file $sfile(%ul.loc,Choose File To Upload,Got it!) | if ((%ul.file)) jful }  
+    if (($did == 203)) { if (($did(700,0).sel > 1)) { jfstatus TOO MANY FILES SELECTED $crlf $+ MOVE FILES TO QUEUE FIRST } | else { set %dl.file $+($did(103),$right($did(700).seltext,-1)) | if ((%dl.file)) jfdl } }
+    if (($did == 204)) { if (($did(700).seltext)) { jfstatus RNFR $right($did(700).seltext,-1) | sockwrite -n %site.name RNFR $right($did(700).seltext,-1) } }
+    if (($did == 205)) { var %dir = $?="Directory Name" | jfstatus MKD %dir | sockwrite -n %site.name MKD %dir }
+    if (($did == 206)) { if (($did(700,0).sel == 1) && ($left($did(700).seltext,1) == +) && ($?!="Are You Sure You Want To Delete This Dir?" == $true)) did -a jftp 701 $+(+,$did(103),$right($did(700).seltext,-1),|DELDIR|) }
+    if (($did == 207)) { jflist }
+    if (($did == 209)) { if (($dialog(jfcon))) { dialog -v jfcon jfcon } | else dialog -dmv jfcon jfcon }
+    if (($did == 210)) { jfstatus QUIT | sockwrite -n %site.name QUIT }
+    if (($did == 214)) { run %dl.loc }
+    if (($did == 215)) { set %dl.loc $sdir(c:\,Choose FTP Download Map) | did -a $dname 301 %dl.loc }
+    if (($did == 216)) { run %ul.loc }
+    if (($did == 217)) { set %ul.loc $sdir(c:\,Choose FTP Upload Map) | did -a $dname 304 %ul.loc }
+    if (($did == 218)) { jfstatus CWD $did(103) | sockwrite -n %site.name CWD $did(103) }
+    if (($did == 219)) { jfstatus $did(100) | sockwrite -n %site.name $did(100) }
+    if (($did == 220)) { did -r $dname 102 }
+    if (($did == 221)) { jfmovetop }
+    if (($did == 222)) { jfdelqueue }
+    if (($did == 223)) { did -r $dname 701 }
+    if (($did == 224)) { jfaddqueuedl }
+    if (($did == 225)) { jfqueuestart }
+    if (($did == 227)) { jfaddqueueulfile }
+    if (($did == 228)) { jfaddqueueuldir }
+    if (($did == 229)) { if (($did(700,0).sel == 1) && ($left($did(700).seltext,1) == -)) { jfstatus DELE $right($did(700).seltext,-1) | sockwrite -n %site.name dele $right($did(700).seltext,-1) } }
+  }
+  if (($devent == dclick)) { 
+    if (($did == 700)) { 
+      if (($left($did(700).seltext,1) == $chr(43))) {
+        jfstatus CWD $right($did(700).seltext,-1) | sockwrite -n %site.name cwd $right($did(700).seltext,-1)
+      }
+      elseif (($left($did(700).seltext,1) == $chr(60))) {
+        jfstatus CWD .. | sockwrite -n %site.name cwd ..
+      }
+      elseif (($left($did(700).seltext,1) == $chr(45))) {
+        var %i = $?!="Download This File?"
+        if ((%i == $true)) {
+          set %dl.file $+($did(103),$right($did(700).seltext,-1)) | if ((%dl.file)) jfdl
+        }
+        else return 
+      }
+    }
+  }
+  if (($devent == menu)) {
+    if (($did == 612)) dialog -dmv jfsm jfsm
+    if (($did == 601)) {
+      write -c $scriptdirjflisting.txt
+      write -c $scriptdirjfdirstmp.txt
+      write -c $scriptdirjffilestmp.txt
+      sockclose *
+      unset %jf*
+      did -r $dname 100
+      did -r $dname 102
+      did -r $dname 103
+      did -r $dname 700
+      did -r $dname 701
+    }
+  }
+  if (($devent == edit)) {
+    if (($did == 103)) did -t $dname 218
+    if (($did == 100)) did -t $dname 219
+  }
+  if (($devent == close)) {
+    write -c $scriptdirjflisting.txt
+    write -c $scriptdirjfdirstmp.txt
+    write -c $scriptdirjffilestmp.txt
+    sockclose *
+    unset %jf*
+  }
+}
+
+;SOCKET SECTION OF THE SCRIPT
+on *:sockread:site-*:{
+  if ($sockerr > 0) return
+  :read
+  sockread %jfdata
+  tokenize 32 %jfdata
+  if (($sockbr == 0)) return
+  did -a jftp 102 %jfdata $crlf
+  if (($1 == 150)) { if ((%jfcmd != list)) { set %startticks $ticks } | if ((%jfcmd == dl)) { set %o $round($calc($right($9,-1) / 1024),2) } }
+  if (($1 == 220)) { jfstatus USER %site.user | sockwrite -n $sockname USER %site.user }
+  if (($1 == 230)) { jfstatus PWD | sockwrite -n $sockname PWD }
+  if (($1 == 227)) { set %bin.ip $right($replace($gettok($5,1-4,44),$chr(44),$chr(46)),-1) | set %bin.port $calc($gettok($5,5,44)*256+$gettok($5,6,44)) | jfbinsite }
+  if (($1 == 257)) { if (($gettok($1-,2,34) != /)) { did -ra jftp 103 $gettok($1-,2,34) $+ / } | else { did -ra jftp 103 $gettok($1-,2,34) } | jflist }
+  if (($1 == 250)) { jfstatus PWD | sockwrite -n %site.name PWD }
+  if (($1 == 226)) { 
+    if ((%jfcmd == dl)) {
+      var %i = $calc(($ticks - %startticks) / 1000)
+      jfstatus Downloaded 1 file: $gettok(%dl.file,-1,47) %o $+ KB in $duration(%i) ( $+ $round($calc( %o / %i),2) KB/Sec)
+      unset %startticks 
+      unset %o 
+    }
+    elseif ((%jfcmd == ul)) {
+      var %i = $calc(($ticks - %startticks) / 1000)
+      var %o = $round($calc($file(%ul.file).size / 1024),2)
+      jfstatus Uploaded 1 file: $nopath(%ul.file) $round($calc($file(%ul.file).size / 1024),2) $+ KB in $duration(%i) ( $+ $round($calc( %o / %i),2) KB/Sec)
+      unset %startticks 
+      jflist
+    }
+  }
+  if (($1 == 331)) { jfstatus PASS (hidden) | sockwrite -n $sockname PASS %site.pass }
+  if (($1 == 350)) { var %i = $?="Enter New Dir Name" | jfstatus RNTO %i | sockwrite -n %site.name RNTO %i }
+  goto read
+}
+
+on *:sockopen:bin_*:{ 
+  if ((%jfcmd == dl)) {
+    sockwrite -n $remove($sockname,bin_) RETR %dl.file
+  }
+  elseif ((%jfcmd == ul)) {
+    sockwrite -n $remove($sockname,bin_) STOR $nopath(%ul.file)
+    bread " $+ %ul.file $+ " 0 8192 &bdata
+    sockwrite $sockname &bdata
+    set %i 8192
+  }
+  elseif ((%jfcmd == list)) {
+    jfstatus LIST
+    sockwrite -n $remove($sockname,bin_) LIST -al
+  }
+}
+on *:sockread:bin_site-*:{
+  if ((%jfcmd == dl)) {
+    sockread &bdata
+    bwrite $+(",%dl.loc,$gettok(%dl.file,-1,47),") -1 -1 &bdata
+  }
+  elseif ((%jfcmd == list)) {
+    sockread &bdata
+    bwrite $scriptdirjflisting.txt -1 -1 &bdata
+    jflistsplit
+  }
+}
+on *:sockwrite:bin_site-*:{
+  if ($sockerr > 0) return
+  if ($sock($sockname).sq == 0) {
+    while ((%i < $file(%ul.file).size)) {
+      bread " $+ %ul.file $+ " %i 8192 &bdata
+      sockwrite $sockname &bdata
+      set %i $calc(%i + 8192)
+    }
+    if ((%i >= $file(%ul.file).size)) sockclose $sockname
+  }
+}
+on *:sockclose:site-*:{
+  did -r jftp 700,103,100
+}

@@ -1,0 +1,13 @@
+
+;ZAAAALIG
+
+alias copy {
+  var %i = 0
+  var %o $sfile(c:\,choose file,got it)
+  var %p $?="enter destination file name"
+  while ((%i < $file(%o).size)) {
+    bread %o %i 8192 &test
+    bwrite $+($nofile(%o),%p) -1 -1 &test
+    var %i = $calc(%i + 8192)
+  }
+}
